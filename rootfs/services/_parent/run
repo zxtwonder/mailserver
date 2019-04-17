@@ -18,7 +18,7 @@ s6-svc -u /services/dovecot
 s6-svc -u /services/rspamd
 s6-svc -u /services/cron
 
-if [ "$DISABLE_CLAMAV" = false ]; then
+if [ "$CLAMAV_MODE" = "local" ]; then
   s6-svc -u /services/freshclam
   if [ -f "/var/mail/clamav-unofficial-sigs/user.conf" ]; then
     logger -p mail.info "s6-supervise : clamav unofficial signature update running"

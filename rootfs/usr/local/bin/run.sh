@@ -18,12 +18,14 @@ export CAFILE
 export CERTFILE
 export KEYFILE
 export FULLCHAIN
-export DISABLE_CLAMAV
 export DISABLE_DNS_RESOLVER
 export RECIPIENT_DELIMITER
 export FETCHMAIL_INTERVAL
 export RELAY_NETWORKS
 export PASSWORD_SCHEME
+export CLAMAV_MODE
+export CLAMAV_HOST
+export CLAMAV_PORT
 
 FQDN=${FQDN:-$(hostname --fqdn)}
 DOMAIN=${DOMAIN:-$(hostname --domain)}
@@ -44,7 +46,6 @@ REDIS_NUMB=${REDIS_NUMB:-0}
 RSPAMD_PASSWORD=$([ -f "$RSPAMD_PASSWORD" ] && cat "$RSPAMD_PASSWORD" || echo "${RSPAMD_PASSWORD:-}")
 WHITELIST_SPAM_ADDRESSES=${WHITELIST_SPAM_ADDRESSES:-}
 DISABLE_RSPAMD_MODULE=${DISABLE_RSPAMD_MODULE:-}
-DISABLE_CLAMAV=${DISABLE_CLAMAV:-false}
 DISABLE_SIEVE=${DISABLE_SIEVE:-false}
 DISABLE_SIGNING=${DISABLE_SIGNING:-false}
 DISABLE_GREYLISTING=${DISABLE_GREYLISTING:-false}
@@ -60,6 +61,9 @@ RECIPIENT_DELIMITER=${RECIPIENT_DELIMITER:-"+"}
 FETCHMAIL_INTERVAL=${FETCHMAIL_INTERVAL:-10}
 RELAY_NETWORKS=${RELAY_NETWORKS:-}
 PASSWORD_SCHEME=${PASSWORD_SCHEME:-"SHA512-CRYPT"}
+CLAMAV_MODE=${CLAMAV_MODE:-local}
+CLAMAV_HOST=${CLAMAV_HOST:-localhost}
+CLAMAV_PORT=${CLAMAV_PORT:-3310}
 
 export LDAP_ENABLED
 export LDAP_HOST
@@ -422,6 +426,7 @@ _envtpl /etc/dovecot/conf.d/15-lda.conf
 _envtpl /etc/dovecot/conf.d/20-lmtp.conf
 _envtpl /etc/dovecot/conf.d/90-quota.conf
 _envtpl /etc/dovecot/conf.d/auth-ldap.conf.ext
+_envtpl /etc/rspamd/local.d/antivirus.conf
 _envtpl /etc/rspamd/local.d/redis.conf
 _envtpl /etc/rspamd/local.d/settings.conf
 _envtpl /etc/rspamd/local.d/statistic.conf
@@ -559,12 +564,24 @@ else
   echo "[INFO] Debug mode is disabled"
 fi
 
-# Disable virus check if asked
-if [ "$DISABLE_CLAMAV" = true ]; then
+# Configure virus check
+if [ "$CLAMAV_MODE" = "local" ]; then
+  echo "[INFO] ClamAV is enabled"
+elif [ "$CLAMAV_MODE" = "external" ]; then
+  echo "[INFO] ClamAV is external, local service will not start"
+  IP=$(dig A ${CLAMAV_HOST} +short +search)
+  if [ -n "$IP" ]; then
+    echo "[INFO] Container IP found: $IP"
+  else
+    echo "[ERROR] Container IP not found with embedded DNS server... Abort !"
+    echo "[ERROR] Check your CLAMAV_HOST environment variable"
+    exit 1
+  fi
+
+  rm -f /etc/logrotate.d/clamav-*
+else
   echo "[INFO] ClamAV is disabled, service will not start"
   rm -f /etc/rspamd/local.d/antivirus.conf /etc/logrotate.d/clamav-*
-else
-  echo "[INFO] ClamAV is enabled"
 fi
 
 # Disable fetchmail forwarding
