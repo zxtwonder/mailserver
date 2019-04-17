@@ -473,13 +473,9 @@ if [ "$LDAP_ENABLED" = true ]; then
     echo "[INFO] LDAP hostname not found in /etc/hosts"
     IP=$(dig A ${LDAP_HOST} +short +search)
     if [ -n "$IP" ]; then
-      # echo "[INFO] Container IP found, adding a new record in /etc/hosts"
-      # echo "${IP} ${LDAP_HOST}" >> /etc/hosts
       echo "[INFO] Container IP found: $IP"
     else
-      echo "[ERROR] Container IP not found with embedded DNS server... Abort !"
-      echo "[ERROR] Check your LDAP_HOST environment variable"
-      exit 1
+      echo "[WARN] Container IP not found: ${LDAP_HOST}"
     fi
   else
     echo "[INFO] LDAP hostname found in /etc/hosts"
@@ -492,13 +488,9 @@ else
     echo "[INFO] MariaDB/PostgreSQL hostname not found in /etc/hosts"
     IP=$(dig A ${DBHOST} +short +search)
     if [ -n "$IP" ]; then
-      # echo "[INFO] Container IP found, adding a new record in /etc/hosts"
-      # echo "${IP} ${DBHOST}" >> /etc/hosts
       echo "[INFO] Container IP found: $IP"
     else
-      echo "[ERROR] Container IP not found with embedded DNS server... Abort !"
-      echo "[ERROR] Check your DBHOST environment variable"
-      exit 1
+      echo "[WARN] Container IP not found: ${DBHOST}"
     fi
   else
     echo "[INFO] MariaDB/PostgreSQL hostname found in /etc/hosts"
@@ -512,13 +504,9 @@ if [ $? -ne 0 ]; then
   echo "[INFO] Redis hostname not found in /etc/hosts"
   IP=$(dig A ${REDIS_HOST} +short +search)
   if [ -n "$IP" ]; then
-    # echo "[INFO] Container IP found, adding a new record in /etc/hosts"
-    # echo "${IP} ${REDIS_HOST}" >> /etc/hosts
     echo "[INFO] Container IP found: $IP"
   else
-    echo "[ERROR] Container IP not found with embedded DNS server... Abort !"
-    echo "[ERROR] Check your REDIS_HOST environment variable"
-    exit 1
+    echo "[WARN] Container IP not found: ${REDIS_HOST}"
   fi
 else
   echo "[INFO] Redis hostname found in /etc/hosts"
@@ -573,9 +561,7 @@ elif [ "$CLAMAV_MODE" = "external" ]; then
   if [ -n "$IP" ]; then
     echo "[INFO] Container IP found: $IP"
   else
-    echo "[ERROR] Container IP not found with embedded DNS server... Abort !"
-    echo "[ERROR] Check your CLAMAV_HOST environment variable"
-    exit 1
+    echo "[WARN] Container IP not found: ${CLAMAV_HOST}"
   fi
 
   rm -f /etc/logrotate.d/clamav-*
